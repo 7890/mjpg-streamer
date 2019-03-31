@@ -333,7 +333,7 @@ void send_snapshot(int fd, int input_number)
     /* write the response */
     sprintf(buffer, "HTTP/1.0 200 OK\r\n" \
             STD_HEADER \
-            "Content-type: image/jpeg\r\n" \
+            "Content-Type: image/jpeg\r\n" \
             "X-Timestamp: %d.%06d\r\n" \
             "\r\n", (int) timestamp.tv_sec, (int) timestamp.tv_usec);
 
@@ -441,7 +441,7 @@ void send_error(int fd, int which, char *message)
 
     if(which == 401) {
         sprintf(buffer, "HTTP/1.0 401 Unauthorized\r\n" \
-                "Content-type: text/plain\r\n" \
+                "Content-Type: text/plain\r\n" \
                 STD_HEADER \
                 "WWW-Authenticate: Basic realm=\"MJPG-Streamer\"\r\n" \
                 "\r\n" \
@@ -449,28 +449,28 @@ void send_error(int fd, int which, char *message)
                 "%s", message);
     } else if(which == 404) {
         sprintf(buffer, "HTTP/1.0 404 Not Found\r\n" \
-                "Content-type: text/plain\r\n" \
+                "Content-Type: text/plain\r\n" \
                 STD_HEADER \
                 "\r\n" \
                 "404: Not Found!\r\n" \
                 "%s", message);
     } else if(which == 500) {
         sprintf(buffer, "HTTP/1.0 500 Internal Server Error\r\n" \
-                "Content-type: text/plain\r\n" \
+                "Content-Type: text/plain\r\n" \
                 STD_HEADER \
                 "\r\n" \
                 "500: Internal Server Error!\r\n" \
                 "%s", message);
     } else if(which == 400) {
         sprintf(buffer, "HTTP/1.0 400 Bad Request\r\n" \
-                "Content-type: text/plain\r\n" \
+                "Content-Type: text/plain\r\n" \
                 STD_HEADER \
                 "\r\n" \
                 "400: Not Found!\r\n" \
                 "%s", message);
     } else {
         sprintf(buffer, "HTTP/1.0 501 Not Implemented\r\n" \
-                "Content-type: text/plain\r\n" \
+                "Content-Type: text/plain\r\n" \
                 STD_HEADER \
                 "\r\n" \
                 "501: Not Implemented!\r\n" \
@@ -551,7 +551,7 @@ void send_file(int id, int fd, char *parameter)
 
     /* prepare HTTP header */
     sprintf(buffer, "HTTP/1.0 200 OK\r\n" \
-            "Content-type: %s\r\n" \
+            "Content-Type: %s\r\n" \
             STD_HEADER \
             "\r\n", mimetype);
     i = strlen(buffer);
@@ -722,7 +722,7 @@ void command(int id, int fd, char *parameter)
 
     /* Send HTTP-response */
     sprintf(buffer, "HTTP/1.0 200 OK\r\n" \
-            "Content-type: text/plain\r\n" \
+            "Content-Type: text/plain\r\n" \
             STD_HEADER \
             "\r\n" \
             "%s: %d", command, res);
@@ -1147,7 +1147,7 @@ void send_Input_JSON(int fd, int plugin_number)
     char buffer[BUFFER_SIZE*16] = {0}; // FIXME do reallocation if the buffer size is small
     int i;
     sprintf(buffer, "HTTP/1.0 200 OK\r\n" \
-            "Content-type: %s\r\n" \
+            "Content-Type: %s\r\n" \
             STD_HEADER \
             "\r\n", "application/x-javascript");
 
@@ -1253,7 +1253,7 @@ void send_Program_JSON(int fd)
     char buffer[BUFFER_SIZE*16] = {0}; // FIXME do rea llocation if the buffer size is small
     int i, k;
     sprintf(buffer, "HTTP/1.0 200 OK\r\n" \
-            "Content-type: %s\r\n" \
+            "Content-Type: %s\r\n" \
             STD_HEADER \
             "\r\n", "application/x-javascript");
 
@@ -1326,7 +1326,7 @@ void send_Output_JSON(int fd, int plugin_number)
     char buffer[BUFFER_SIZE*16] = {0}; // FIXME do re allocation if the buffer size is small
     int i;
     sprintf(buffer, "HTTP/1.0 200 OK\r\n" \
-            "Content-type: %s\r\n" \
+            "Content-Type: %s\r\n" \
             STD_HEADER \
             "\r\n", "application/x-javascript");
 
