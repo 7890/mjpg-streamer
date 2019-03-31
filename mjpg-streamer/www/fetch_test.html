@@ -1,0 +1,145 @@
+<html>
+	<head>
+		<title>MJPG fetch test</title>
+	</head>
+	<body>
+		<p>Stream JPG images with full JavaScript control to canvas using fetch() API</p>
+		<p>Needs Firefox preferences setting: about:config -> javascript.options.streams=true</p>
+		<pre>
+Quick start:
+cd mjpg-streamer/mjpg-streamer
+make
+LD_LIBRARY_PATH=. ./mjpg_streamer -i "input_file.so --folder /dev/shm/ --name image.jpg" -o "output_http.so -p 8080 -w ./www"
+
+-> surf to localhost:8080
+-> copy JPG image(s) to /dev/shm/image.jpg
+-> image(s) appear in browser
+-> open console, see calculated FPS and check network traffic
+		</pre>
+		<img id="image" width="640" height="480"/>
+		<canvas id="canvas" width="640" heigth="480"></canvas>
+		<script>
+/*
+//https://stackoverflow.com/questions/19346775/rendering-mjpeg-stream-in-html5
+
+You can do this without repeatedly making Http requests.
+Only one will suffice. You can use the fetch api to create a ReadableStream,
+access it's Reader and keep reading from the stream.
+
+Once you have the reader keep reading chunks from the stream recursively.
+Look for the SOI ( 0xFF 0xD8) in the byte stream which signals the end of the
+header and the beginning of the JPEG frame. The header will contain the length
+of the JPEG in bytes to be read. Read that many bytes from the chunk and any
+successive chunks and store it into a Uint8Array.
+Once you've successfully read the frame convert it into a blob, create a UrlObject
+out of it and assign it to the src property of your img object.
+
+Keep doing this till the connection is closed.
+
+Shameless plug. Here's a link to a working sample on github
+
+https://github.com/aruntj/mjpeg-readable-stream
+*/
+
+			// The mjpeg url.
+			const url = "/?action=stream";
+
+			const SOI = new Uint8Array(2);
+			//JPG
+			SOI[0] = 0xFF;
+			SOI[1] = 0xD8;
+
+			//PNG (needs change in output_http/httpd.c, set content-type to png
+			//SOI[0] = 0x89;
+			//SOI[1] = 0x50;
+
+			const CONTENT_LENGTH = 'Content-Length';
+			const TYPE_JPEG = 'image/jpeg';
+			const TYPE_PNG = 'image/png';
+			const TYPE = TYPE_JPEG;
+
+			fetch(url)
+			.then(response => {
+				if (!response.ok) {
+					throw Error(response.status+' '+response.statusText)
+				}
+
+				if (!response.body) {
+					throw Error('ReadableStream not yet supported in this browser.')
+				}
+	
+				const reader = response.body.getReader();
+
+				let headers = '';
+				let contentLength = -1;
+				let imageBuffer = null;
+				let bytesRead = 0;
+
+				// calculating fps. This is pretty lame. Should probably implement a floating window function.
+				let frames = 0;
+
+				setInterval(() => {
+					console.log("fps : " + frames);
+					frames = 0;
+				}, 1000) 
+
+				const read = () => {
+					reader.read().then(({done, value}) => {
+						if (done) {
+							controller.close();
+							return;
+						}
+
+						for (let index =0; index < value.length; index++) {
+							// we've found start of the frame. Everything we've read till now is the header.
+							if (value[index] === SOI[0] && value[index+1] === SOI[1]) {
+//								console.log('header found : ' + headers);
+								contentLength = getLength(headers);
+//								console.log("Content Length : " + contentLength);
+								imageBuffer = new Uint8Array(new ArrayBuffer(contentLength));
+							}
+							// we're still reading the header.
+							if (contentLength <= 0) {
+								headers += String.fromCharCode(value[index]);
+							}
+							// we're now reading the jpeg. 
+							else if (bytesRead < contentLength){
+								imageBuffer[bytesRead++] = value[index];
+							}
+							// we're done reading the jpeg. Time to render it. 
+							else {
+//								console.log("jpeg read with bytes : " + bytesRead);
+								document.getElementById('image').src = URL.createObjectURL(new Blob([imageBuffer], {type: TYPE}));
+								frames++;
+								contentLength = 0;
+								bytesRead = 0;
+								headers = '';
+							}
+						}
+
+						read();
+					}).catch(error => {
+						console.error(error);
+					})
+				}//end read()
+
+				read();
+
+			//end fetch()
+			}).catch(error => {
+				console.error(error);
+			})
+
+			const getLength = (headers) => {
+				let contentLength = -1;
+				headers.split('\n').forEach((header, _) => {
+					const pair = header.split(':');
+					if (pair[0] === CONTENT_LENGTH) {
+						contentLength = pair[1];
+					}
+				})
+				return contentLength;
+			};
+		</script>
+	</body>
+</html>
